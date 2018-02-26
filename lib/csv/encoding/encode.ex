@@ -8,7 +8,7 @@ defprotocol CSV.Encode do
   The encode function to implement, gets passed the data and env as a keyword
   list containing the currently used separator and delimiter.
   """
-  def encode(data, env \\ [])
+  def encode(data, separator, delimiter, escaping)
 end
 
 defimpl CSV.Encode, for: Any do
@@ -17,8 +17,9 @@ defimpl CSV.Encode, for: Any do
   string encode implementation
   """
 
-  def encode(data, env \\ []) do
-    to_string(data) |> CSV.Encode.encode(env)
+  def encode(data, _separator, _delimiter, false), do: to_string(data)
+  def encode(data, separator, delimiter, true) do
+    data |> to_string() |> CSV.Encode.encode(separator, delimiter, true)
   end
 end
 
@@ -30,10 +31,8 @@ defimpl CSV.Encode, for: BitString do
   where necessary.
   """
 
-  def encode(data, env \\ []) do
-    separator = env |> Keyword.get(:separator, @separator)
-    delimiter = env |> Keyword.get(:delimiter, @delimiter)
-
+  def encode(data, _separator, _delimiter, false), do: data
+  def encode(data, separator, delimiter, true) do
     cond do
       String.contains?(data, [
         << separator :: utf8 >>,
